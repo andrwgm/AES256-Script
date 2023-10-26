@@ -1,4 +1,21 @@
-import bitarray
+from bitarray import bitarray
 
-print('hola')
-print('lucia')
+m = bitarray(128)
+    
+#método principal
+def cifrado(mensaje, clave):
+    mensaje = padding(mensaje)
+    Mensaje = bloques(mensaje)
+    cifrado = ""
+    for bloque in Mensaje:
+        cifrado += AES(bloque, clave)
+    return(cifrado)
+
+def padding():
+    pass
+
+def bloques():
+    pass
+
+def AES():
+    pass
