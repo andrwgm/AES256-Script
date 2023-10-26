@@ -1,6 +1,7 @@
 from bitarray import bitarray
 
 m = bitarray(128)
+#prueba para ver si funciona
     
 #método principal
 def cifrado(mensaje, clave):
