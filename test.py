@@ -99,6 +99,14 @@ def Sbox(palabra):
         S.append(Sbox[palabra[i:i+2]])
     return(''.join(S))
 
+def Rcon(i):
+    R = [1]
+    for j in range(1, i):
+        R.append(R[j-1] << 1)
+        if R[j-1] & 0x80:
+            R[j] ^= 0x1b
+    return(R[i-1])
+
 
 
 
