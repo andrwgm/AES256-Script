@@ -26,3 +26,6 @@ def bloques():
 
 def AES():
     pass
+
+def padding():
+    pass
