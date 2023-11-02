@@ -1,7 +1,6 @@
 from bitarray import bitarray
 
 m = bitarray(128)
-#prueba para ver si funciona
     
 #método principal
 def cifrado(mensaje, clave):
@@ -12,8 +11,14 @@ def cifrado(mensaje, clave):
         cifrado += AES(bloque, clave)
     return(cifrado)
 
-def padding():
-    pass
+#funciones pequeñas
+
+#Devuelve la matriz traspuesta
+def traspuesta(estado):
+    E = []
+    for i in range(4):
+        E.append([x[i] for x in estado])
+    return(E)
 
 def bloques():
     pass
