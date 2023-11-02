@@ -109,3 +109,11 @@ def agrupar(L, k):
     for i in range(0, n, k):
         G.append(pegar(L[i:+k]))
     return(G)
+
+#funcion padding para utilizar al final para rellenar
+def padding(mensaje):
+    m = mensaje+ '80'
+    L = len(m)
+    r = L%32
+    if r !=0:
+        m += '0' * (32-r)
