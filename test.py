@@ -1,4 +1,5 @@
 from bitarray import bitarray
+from bitarray.util import hex2ba, ba2hex, int2ba, ba2int
 
 m = bitarray(128)
     
