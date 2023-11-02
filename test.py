@@ -2,6 +2,7 @@ from bitarray import bitarray
 
 m = bitarray(128)
     
+# prueba noehhhh 
 #método principal
 def cifrado(mensaje, clave):
     mensaje = padding(mensaje)
