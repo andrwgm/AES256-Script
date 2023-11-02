@@ -29,7 +29,7 @@ def hex2string(h):
     return('"'.join(L))
 
 def keyExpansion(clave):
-    W = []
+    w = []
     i= 0
     while i<8:
         w.append(clave[i:i+8]) #cogemos la clave de 0 hasta 7
@@ -50,6 +50,57 @@ def keyExpansion(clave):
         #return(agrupar(w,4))
     #w = ['8hex' 60 palabras]
     #w = ['32hex' 15 claves]  #devolver lista (K) con 15 claves de 128 bits (32 hexadecimales)
+
+def SubWord(palabra):
+    S = []
+    for i in range(0, 8, 2):
+        S.append(Sbox[palabra[i:i+2]])
+    return(''.join(S))
+
+def RotWord(palabra):
+    return(palabra[2:]+palabra[:2])
+
+def AddRoundKey(estado, clave):
+    return(estado^clave)
+
+def SubBytes(estado):
+    S = []
+    for i in range(0, 8, 2):
+        S.append(Sbox[estado[i:i+2]])
+    return(''.join(S))
+
+def ShiftRows(estado):
+    E = []
+    for i in range(4):
+        E.append(estado[i*8:i*8+8])
+    E[1] = E[1][2:]+E[1][:2]
+    E[2] = E[2][4:]+E[2][:4]
+    E[3] = E[3][6:]+E[3][:6]
+    return(''.join(E))
+
+def MixColumns(estado):
+    E = traspuesta(estado)
+    for i in range(4):
+        E[i] = MixColumn(E[i])
+    return(traspuesta(E))
+
+def MixColumn(columna):
+    C = trocear(columna, 2)
+    C = [ba2int(x) for x in C]
+    C = [x << 1 for x in C]
+    C = [x ^ (x & 0x1b) for x in C]
+    C = [int2ba(x, 8) for x in C]
+    C = pegar(C)
+    return(C)
+
+def Sbox(palabra):
+    S = []
+    for i in range(0, 8, 2):
+        S.append(Sbox[palabra[i:i+2]])
+    return(''.join(S))
+
+
+
 
 #Divide un bitarray B en trozos de tamaño k
 def trocear(B, k):
