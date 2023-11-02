@@ -13,6 +13,43 @@ def cifrado(mensaje, clave):
 
 #funciones pequeñas
 
+#convertir cadena de texto en hexadecimal
+def string2hex(cadena):
+    L= [ord(letra) for letra in cadena]
+    H = [hex(n)[2:]for n in L] #si ponemos pej. hex(124) devuelve '0x7c' y nos interesa solo a partir del 2
+    h = '"'.join(H)
+    return(h)
+
+#convertir número hexadecimal en cadena de texto
+def hex2string(h):
+    H = [h[i:i+2] for i in range(0, len(h), 2)]
+    L = [int(x, 16) for x in H]
+    Letras = [chr(n) for n in L]
+    return('"'.join(L))
+
+def keyExpansion(clave):
+    W = []
+    i= 0
+    while i<8:
+        w.append(clave[i:i+8]) #cogemos la clave de 0 hasta 7
+        i += 1
+    i = 8
+    while i<60:
+        temp = w[i-1]
+        if i % 8 == 0:
+            temp = SubWord(RotWord(temp))
+            temp = hex2ba(temp)
+            temp ^= Rcon[i//8]
+        elif i%8 == 4:
+            temp = SubWord(temp)
+            temp = hex2ba(temp)
+        temp = hex2ba(w[i-8])^temp
+        w.append(ba2hex(temp))
+        i += 1
+        #return(agrupar(w,4))
+    #w = ['8hex' 60 palabras]
+    #w = ['32hex' 15 claves]  #devolver lista (K) con 15 claves de 128 bits (32 hexadecimales)
+
 #Divide un bitarray B en trozos de tamaño k
 def trocear(B, k):
     """
@@ -45,11 +82,30 @@ def traspuesta(estado):
         E.append([x[i] for x in estado])
     return(E)
 
-def bloques():
-    pass
+def bloques(dato, k):
+    return [dato[i:i+k] for i in range(0, len(dato), k)]
+
+def columnas(lista):
+    estado = []
+    for i in range(4):
+        estado.append(lista[i:i+4])
+    return(estado)
 
 def AES():
     pass
 
 def padding():
     pass
+
+def pegar(L):
+    from functools import reduce
+    B = reduce(lambda x, y: x + y, L)
+    return(B)
+    
+def agrupar(L, k):
+    n = len(L)
+    assert n % k == 0
+    G = []
+    for i in range(0, n, k):
+        G.append(pegar(L[i:+k]))
+    return(G)
