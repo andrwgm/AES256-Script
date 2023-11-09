@@ -38,11 +38,27 @@ def AES(m,K):
 
     return(E)
 
-def Sbox(palabra):
-    S = []
-    for i in range(0, 8, 2):
-        S.append(Sbox[palabra[i:i+2]])
-    return(''.join(S))
+def Sbox(E, s, opcion):
+    B = bitarray()
+    for i in range(0, s, 8):
+        b = E[i:i+8]
+        b = sbox(b, opcion)
+        B = B + B
+    return(B)
+
+def sbox(b, opcion):
+    if opcion == 'cifrar':
+        Tabla = TABLA
+    if opcion == 'descifrar':
+        Tabla = TABLA_INV
+    x = b[:4]
+    y = b[4:]
+    x = ba2int(x)
+    y = ba2int(y)
+    res = Tabla[x][y]
+    res = hex2ba(res)
+    return(res)
+
 
 #funciones de cifrado
 #funcion principal
@@ -247,4 +263,13 @@ def columnas(lista):
     part14 = ['e1', 'f8', '98', '11', '69', 'd9', '8e', '94', '9b', '1e', '87', 'e9', 'ce', '55', '28', 'df']
     part15 = ['8c', 'a1', '89', '0d', 'bf', 'e6', '42', '68', '41', '99', '2d', '0f', 'b0', '54', 'bb', '16']
 
+    
+    for trozo in todasParts:
+    trozojunto = ''
+    for trocito in trozo:
+        trozojunto += trocito
+    todasParts.remove(trozo)
+    todasParts.append(trozojunto)
+
+    
 '''
