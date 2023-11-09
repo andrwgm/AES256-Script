@@ -12,21 +12,43 @@ def cifrado(mensaje, clave):
         cifrado += AES(bloque, clave)
     return(cifrado)
 
-#funciones pequeñas
+#funcion padding para utilizar al final para rellenar
+def padding(mensaje):
+    m = mensaje+ '80'
+    L = len(m)
+    r = L%32
+    if r !=0:
+        m += '0' * (32-r)
 
-#convertir cadena de texto en hexadecimal
-def string2hex(cadena):
-    L= [ord(letra) for letra in cadena]
-    H = [hex(n)[2:]for n in L] #si ponemos pej. hex(124) devuelve '0x7c' y nos interesa solo a partir del 2
-    h = '"'.join(H)
-    return(h)
+def bloques(dato, k):
+    return [dato[i:i+k] for i in range(0, len(dato), k)]
 
-#convertir número hexadecimal en cadena de texto
-def hex2string(h):
-    H = [h[i:i+2] for i in range(0, len(h), 2)]
-    L = [int(x, 16) for x in H]
-    Letras = [chr(n) for n in L]
-    return('"'.join(L))
+def AES():
+    pass
+
+
+#funciones de cifrado
+#funcion principal
+'''def AES(mensaje, clave):
+    #mensaje y clave en hexadecimal
+    mensaje = string2hex(mensaje)
+    clave = string2hex(clave)
+    #mensaje y clave en binario
+    mensaje = hex2ba(mensaje)
+    clave = hex2ba(clave)
+    #mensaje y clave en bloques de 128 bits
+    Mensaje = bloques(mensaje, 128)
+    Clave = bloques(clave, 128)
+    #cifrado
+    cifrado = ""
+    for bloque in Mensaje:
+        cifrado += cifrar(bloque, Clave)
+    return(cifrado)'''
+
+def cifrar(bloque, Clave):
+    pass
+
+#-------------KEY EXPANSION----------------
 
 def keyExpansion(clave):
     w = []
@@ -47,7 +69,7 @@ def keyExpansion(clave):
         temp = hex2ba(w[i-8])^temp
         w.append(ba2hex(temp))
         i += 1
-        #return(agrupar(w,4))
+        return(agrupar(w,4))
     #w = ['8hex' 60 palabras]
     #w = ['32hex' 15 claves]  #devolver lista (K) con 15 claves de 128 bits (32 hexadecimales)
 
@@ -60,8 +82,24 @@ def SubWord(palabra):
 def RotWord(palabra):
     return(palabra[2:]+palabra[:2])
 
-def AddRoundKey(estado, clave):
-    return(estado^clave)
+def Rcon(i):
+    R = [1]
+    for j in range(1, i):
+        R.append(R[j-1] << 1)
+        if R[j-1] & 0x80:
+            R[j] ^= 0x1b
+    return(R[i-1])
+
+def agrupar(L, k):
+    n = len(L)
+    assert n % k == 0
+    G = []
+    for i in range(0, n, k):
+        G.append(pegar(L[i:+k]))
+    return(G)
+
+
+#-------------CIFRADO----------------
 
 def SubBytes(estado):
     S = []
@@ -93,22 +131,12 @@ def MixColumn(columna):
     C = pegar(C)
     return(C)
 
-def Sbox(palabra):
-    S = []
-    for i in range(0, 8, 2):
-        S.append(Sbox[palabra[i:i+2]])
-    return(''.join(S))
-
-def Rcon(i):
-    R = [1]
-    for j in range(1, i):
-        R.append(R[j-1] << 1)
-        if R[j-1] & 0x80:
-            R[j] ^= 0x1b
-    return(R[i-1])
-
-
-
+#Devuelve la matriz traspuesta
+def traspuesta(estado):
+    E = []
+    for i in range(4):
+        E.append([x[i] for x in estado])
+    return(E)
 
 #Divide un bitarray B en trozos de tamaño k
 def trocear(B, k):
@@ -135,15 +163,39 @@ def trocear(B, k):
         lista.append(B[i:i+k])
     return(lista)
 
-#Devuelve la matriz traspuesta
-def traspuesta(estado):
-    E = []
-    for i in range(4):
-        E.append([x[i] for x in estado])
-    return(E)
+def AddRoundKey(estado, clave):
+    return(estado^clave)
 
-def bloques(dato, k):
-    return [dato[i:i+k] for i in range(0, len(dato), k)]
+
+
+
+
+#--------------funciones utiles----------------
+
+#convertir cadena de texto en hexadecimal
+def string2hex(cadena):
+    L= [ord(letra) for letra in cadena]
+    H = [hex(n)[2:]for n in L] #si ponemos pej. hex(124) devuelve '0x7c' y nos interesa solo a partir del 2
+    h = '"'.join(H)
+    return(h)
+
+#convertir número hexadecimal en cadena de texto
+def hex2string(h):
+    H = [h[i:i+2] for i in range(0, len(h), 2)]
+    L = [int(x, 16) for x in H]
+    Letras = [chr(n) for n in L]
+    return('"'.join(L))
+
+def pegar(L):
+    from functools import reduce
+    B = reduce(lambda x, y: x + y, L)
+    return(B)
+
+def Sbox(palabra):
+    S = []
+    for i in range(0, 8, 2):
+        S.append(Sbox[palabra[i:i+2]])
+    return(''.join(S))
 
 def columnas(lista):
     estado = []
@@ -151,29 +203,35 @@ def columnas(lista):
         estado.append(lista[i:i+4])
     return(estado)
 
-def AES():
-    pass
 
-def padding():
-    pass
 
-def pegar(L):
-    from functools import reduce
-    B = reduce(lambda x, y: x + y, L)
-    return(B)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     
-def agrupar(L, k):
-    n = len(L)
-    assert n % k == 0
-    G = []
-    for i in range(0, n, k):
-        G.append(pegar(L[i:+k]))
-    return(G)
 
-#funcion padding para utilizar al final para rellenar
-def padding(mensaje):
-    m = mensaje+ '80'
-    L = len(m)
-    r = L%32
-    if r !=0:
-        m += '0' * (32-r)
+
