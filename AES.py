@@ -23,9 +23,26 @@ def padding(mensaje):
 def bloques(dato, k):
     return [dato[i:i+k] for i in range(0, len(dato), k)]
 
-def AES():
-    pass
+def AES(m,K):
+    Kb = K[0]
+    E = m ^ Kb
+    for r in range(1, 15):
+        E = Sbox(E, 256, 'cifrar')
+        E = ShiftRows(E)
+        E = MixColumns(E)
+        E = E^(K[r])
+    E = Sbox(E, 256, 'cifrar')
+    E = ShiftRows(E)
+    E = E^(K[15])
+    E = ba2hex(E)
 
+    return(E)
+
+def Sbox(palabra):
+    S = []
+    for i in range(0, 8, 2):
+        S.append(Sbox[palabra[i:i+2]])
+    return(''.join(S))
 
 #funciones de cifrado
 #funcion principal
@@ -199,11 +216,7 @@ def pegar(L):
     B = reduce(lambda x, y: x + y, L)
     return(B)
 
-def Sbox(palabra):
-    S = []
-    for i in range(0, 8, 2):
-        S.append(Sbox[palabra[i:i+2]])
-    return(''.join(S))
+
 
 def columnas(lista):
     estado = []
