@@ -32,6 +32,7 @@ def keyExpansion(clave):
     w = []
     i= 0
     while i<8:
+       # w = [clave[32*i:32*i+32]] for i in range(8)]
         w.append(clave[i:i+8]) #cogemos la clave de 0 hasta 7
         i += 1
     i = 8
@@ -41,13 +42,14 @@ def keyExpansion(clave):
             temp = SubWord(RotWord(temp))
             temp = hex2ba(temp)
             temp ^= Rcon[i//8]
-        elif i%8 == 4:
+        elif i % 8 == 4:
             temp = SubWord(temp)
             temp = hex2ba(temp)
-        temp = hex2ba(w[i-8])^temp
+        temp = hex2ba(w[i-8]^temp)
         w.append(ba2hex(temp))
         i += 1
-        #return(agrupar(w,4))
+        w = agrupar(w, 4)
+    return(w)
     #w = ['8hex' 60 palabras]
     #w = ['32hex' 15 claves]  #devolver lista (K) con 15 claves de 128 bits (32 hexadecimales)
 
@@ -57,8 +59,15 @@ def SubWord(palabra):
         S.append(Sbox[palabra[i:i+2]])
     return(''.join(S))
 
+'''
+def SubWord(palabra
+    W = [w[8*i : 8*i+8] for i in range(4)]
+    s = [Subytes (x) for x in W] 
+    return(reduce(lamda x,y:x. S)))
+'''
+
 def RotWord(palabra):
-    return(palabra[2:]+palabra[:2])
+    return(palabra[8:]+palabra[:8])
 
 def AddRoundKey(estado, clave):
     return(estado^clave)
