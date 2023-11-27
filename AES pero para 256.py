@@ -28,27 +28,27 @@ invFilas = ['52096ad53036a538bf40a39e81f3d7fb','7ce339829b2fff87348e4344c4dee9cb
 def AES(m,K):  
     Kb = K[0]   
     E = m ^ Kb
-    for r in range (1, 14):
-        E = Sbox(E,256,'cifrar')
+    for r in range (1, 10):
+        E = Sbox(E,128,'cifrar')
         E = shiftRows(E)
         E = mixColumns(E)
         E = E^(K[r])
-    E = Sbox(E,256,'cifrar')
+    E = Sbox(E,128,'cifrar')
     E = shiftRows(E)
-    E = E ^ (K[14])
+    E = E ^ (K[10])
     E = ba2hex(E)      
     return E
 
 #programa que realiza el paso de decodificación a codificación
 def invAES(M,K):
-    E = M ^ K[14]
+    E = M ^ K[10]
     E = invshiftRows(E)
-    E = Sbox(E,256,'descifrar')
-    for r in reversed(range(1,14)):
+    E = Sbox(E,128,'descifrar')
+    for r in reversed(range(1,10)):
         E = E ^ K[r]
         E = mixColumnsInv(E)
         E = invshiftRows(E)
-        E = Sbox(E,256,'descifrar')
+        E = Sbox(E,128,'descifrar')
     E = E ^ K[0]
     E = ba2hex(E)
     return(E)
@@ -107,7 +107,7 @@ def Sbox(E,s,opcion):
 def cifrarECB(longitud,m,k):
     mensajeC = []
     
-    for i in range (longitud//128):
+    for i in range (longitud//256):
         mensajeC.append(AES(m[i],k))
         
     return mensajeC
