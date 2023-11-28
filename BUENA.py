@@ -127,8 +127,13 @@ def KeyExpansion(key): # key en hexadecimal
 # que se calcula en el keyExpansion
 def AddRoundKey(key, round):    
     #state ya tendria que estar con el valor del mensaje
+
+    # keySchedule es una lista de 15 palabras de 128 bits cada una
     keySchedule = list(KeyExpansion(key))
-    
+
+    # keyScheduleYaPartido es una lista de 15 listas de 4 palabras de 32 bits cada una, es decir,
+    # así podemos aplicar el XOR de cada lista de la keyScheduleYaPartida con cada fila del state,
+    # que ambas tienen 4 elementos
     keyScheduleYaPartido = []
     for palabra in keySchedule:
         keySchedulePartes = []
@@ -138,6 +143,7 @@ def AddRoundKey(key, round):
             keySchedulePartes.append(hex2ba(aux2))
         keyScheduleYaPartido.append(keySchedulePartes)
     
+    # aplicamos el XOR
     for i in range(0, 4):
         state[i] = state[i] ^ keyScheduleYaPartido[round*4 + i]
 
