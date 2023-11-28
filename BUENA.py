@@ -128,9 +128,10 @@ def KeyExpansion(key): # key en hexadecimal
 def AddRoundKey(key, round):    
     #state ya tendria que estar con el valor del mensaje
     keySchedule = list(KeyExpansion(key))
-    keySchedulePartes = []
+    
     keyScheduleYaPartido = []
     for palabra in keySchedule:
+        keySchedulePartes = []
         aux = ba2hex(palabra)
         for i in range(0, 4):
             aux2 = aux[8*i:8*i+8]
