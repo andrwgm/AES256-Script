@@ -5,7 +5,8 @@ from bitarray.util import hex2ba, ba2hex, ba2int, int2ba
 # si no me equivoco, el estado es donde se va guardando el cifrado
 state = [[0 for x in range(4)] for y in range(4)]
 
-Rcon = ['1000000', '02000000', '04000000', '08000000',
+# ten cuidado por si deja el primero como 1000... en vez de 0100...
+Rcon = ['01000000', '02000000', '04000000', '08000000',
         '10000000', '20000000', '40000000', '80000000',
         '1B000000', '36000000', '6C000000', 'D8000000',
         'AB000000', '4D000000']
@@ -64,6 +65,8 @@ def Sbox(word):
         b = word[i:i+8]
         b = sbox(b)
         B = B + b
+    
+    #print('afterSubWord: ',ba2hex(B))
     return (B)
 
 # RotWord es coge los dos primeros caracteres y les pone al final de la palabra
@@ -74,33 +77,38 @@ def RotWord(word): # word en hexadecimal
 # SubWord is a function that takes a four-byte input word and applies
 # the S-box (Sec. 5.1.1,Fig. 7) to each of the four bytes to produce an output word
 def SubWord(word): # word entra en hexadecimal
+    #print('rotword: ',ba2hex(word))
     return Sbox(word) # y retorna el bitarray que salga de Sbox
 
 # Nb = 4 Nk = 8 Nr = 14       Nb * (Nr + 1) = 60
 def KeyExpansion(key): # key en hexadecimal
     key = hex2ba(key) # key en binario
     w = []
-    i= 0
 
-    # dividimos la clave en 8 palabras de 8 caracteres
-    while i<8: #Nk
-        w.append(key[i:i+32]) #cogemos la clave en trozos de 32 bits
-        i += 1
+    # dividimos en palabras de 32 bits
+    w = [key[32*i:32*i+32] for i in range(8)]
+
     i = 8 #Nk
 
     # aqui w es una lista de 8 palabras de 32 bits cada una
     # en cada iteracion se añade una nueva palabra al final de la lista w
     while i<60: # Nb * (Nr + 1)
         temp = w[i-1] # temp es un trozo de 8 caracteres
+        #print('-----------Nueva iteracion-----------')
+        #print('i: ',i,'temp: ', ba2hex(temp))
         if i % 8 == 0:
             temp = SubWord(RotWord(temp)) # a subWord le entran hexadecimales
-            temp ^= Rcon[i//8]
+            #print('Rcon: ', ba2hex(Rcon[i//8 - 1]))
+            temp ^= Rcon[i//8 - 1]
+            #print('temp: ',ba2hex(temp))
 
         elif i%8 == 4:
             temp = SubWord(temp)
 
+        #print('w[i-8]: ',ba2hex(w[i-8]))
         temp = w[i-8]^temp
 
+        #print('temp: ',ba2hex(temp))
         w.append(temp)
 
         i += 1
@@ -117,12 +125,20 @@ def KeyExpansion(key): # key en hexadecimal
 # 5.2). Those Nb words are each added into the columns of the State
 # -> aqui rellenamos el estado haciendo un XOR del propio estado con 4 palabras de la key schedule
 # que se calcula en el keyExpansion
-def AddRoundKey(key):    
-    #state ya te
-    keySchedule = KeyExpansion(key)
+def AddRoundKey(key, round):    
+    #state ya tendria que estar con el valor del mensaje
+    keySchedule = list(KeyExpansion(key))
+    keySchedulePartes = []
+    keyScheduleYaPartido = []
+    for palabra in keySchedule:
+        aux = ba2hex(palabra)
+        for i in range(0, 4):
+            aux2 = aux[8*i:8*i+8]
+            keySchedulePartes.append(hex2ba(aux2))
+        keyScheduleYaPartido.append(keySchedulePartes)
+    
     for i in range(0, 4):
-        #state[i] = state[i] ^ #cada fila que salga del key expansion w[]
-        pass
+        state[i] = state[i] ^ keyScheduleYaPartido[round*4 + i]
 
 def subBytes():
     pass
@@ -142,14 +158,14 @@ def shiftRowsInv():
 def subBytesInv():
     pass
 
-def cifrado():
-    AddRoundKey()
+def cifrado(key):
+    AddRoundKey(key, 0)
 
     for i in range(1, 13):
         subBytes()
         shiftRows()
         mixColumns()
-        AddRoundKey()
+        AddRoundKey(key, i)
     
     subBytes()
     shiftRows()
