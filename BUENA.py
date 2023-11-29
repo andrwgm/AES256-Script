@@ -136,16 +136,18 @@ def AddRoundKey(key, round):
     # que ambas tienen 4 elementos
     keyScheduleYaPartido = []
     for palabra in keySchedule:
-        keySchedulePartes = []
-        aux = ba2hex(palabra)
-        for i in range(0, 4):
-            aux2 = aux[8*i:8*i+8]
-            keySchedulePartes.append(hex2ba(aux2))
+        keySchedulePartes = [['','','',''],['','','',''],['','','',''],['','','','']]
+        palabraAux = ba2hex(palabra)
+        for i in range(0, 16):
+            aux2 = palabraAux[2*i:2*i+2]
+            keySchedulePartes[i % 4][i // 4] = aux2 # así, para cada iteracion del for, se llena cada casilla de la matrix 4x4 de manera vertical
         keyScheduleYaPartido.append(keySchedulePartes)
     
     # aplicamos el XOR
     for i in range(0, 4):
-        state[i] = state[i] ^ keyScheduleYaPartido[round*4 + i]
+        for j in range(0, 4):
+            #cada posicion del state tiene que ser 32 bits
+            state[i][j] = state[i][j] ^ keyScheduleYaPartido[round*4 + i][j]
 
 def subBytes():
     pass
