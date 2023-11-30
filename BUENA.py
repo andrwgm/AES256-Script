@@ -144,19 +144,52 @@ def AddRoundKey(key, round):
         keyScheduleYaPartido.append(keySchedulePartes)
     
     # aplicamos el XOR
-    for i in range(0, 4):
-        for j in range(0, 4):
-            #cada posicion del state tiene que ser 32 bits
-            state[i][j] = state[i][j] ^ keyScheduleYaPartido[round*4 + i][j]
+    for i in range(0, 16):
+            state[i % 4][i // 4] = state[i % 4][i // 4] ^ keyScheduleYaPartido[round][i % 4][i // 4]
 
 def subBytes():
-    pass
+    for i in range(0, 16):
+            state[i % 4][i // 4] = ba2hex(sbox(hex2ba(state[i % 4][i // 4])))
 
 def shiftRows():
-    pass
+    for i in range(0, 4):
+        state[i] = state[i][i:] + state[i][:i]
 
+def traspuesta(matrix):
+    E = []
+    for i in range(0, 4):
+        E.append([matrix[j][i] for j in range(0, 4)])
+    return(E)
+
+# Se calcula la x multiplicacion por el binario
+def xtime(B):
+    b = B.copy()
+    b.append(0) 
+    if b[0]==0:
+        del(b[0])
+    else:
+        b^=bitarray('100011011') # polinomio de reduccion de Rijndael
+        del(b[0])
+    return(b)
+
+#Esta lista se copia en una variable (c) la cual se multiplica usando la función “xtime()” multiplicaría el primer elemento de la fila con el primer elemento de la columna y así sucesivamente. 
+def multRijndael(fila): #ahora son filas porque esta traspuesta, pero realmente son columnas
+    aux = []
+    for i in range(4):
+        x = ba2hex(xtime(hex2ba(fila[0])) ^ xtime(hex2ba(fila[1])) ^ hex2ba(fila[1]) ^ hex2ba(fila[2]) ^ hex2ba(fila[3]))
+        aux.append(x)
+        fila.append(fila[0])
+        del(fila[0])
+    return (aux)
+    
 def mixColumns():
-    pass
+    state = traspuesta(state)   
+
+    for i in range(4):
+        state[i] = multRijndael(state[i])
+    
+    state = traspuesta(state)
+
 
 def mixColumnsInv():
     pass 
