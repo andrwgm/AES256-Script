@@ -2,7 +2,7 @@ import bitarray.util
 from bitarray import bitarray
 from bitarray.util import hex2ba, ba2hex, ba2int, int2ba
 
-# si no me equivoco, el estado es donde se va guardando el cifrado
+# el estado es donde se va guardando el cifrado
 state = [[0 for x in range(4)] for y in range(4)]
 
 # ten cuidado por si deja el primero como 1000... en vez de 0100...
@@ -30,6 +30,20 @@ SboxTable = [['63','7c','77','7b','f2','6b','6f','c5','30','01','67','2b','fe','
             ['8c','a1','89','0d','bf','e6','42','68','41','99','2d','0f','b0','54','bb','16']]
 
 #key = hex2ba(key) y su len = 256 en binario y 64 en hex
+
+def setState(mensaje):
+    for i in range(0, 16):
+        state[i % 4][i // 4] = mensaje[i*2:i*2+2]
+
+def resetState():
+    for i in range(0, 16):
+        state[i % 4][i // 4] = '00'
+
+def state2string():
+    m = ''
+    for i in range(0, 16):
+        m += state[i % 4][i // 4]
+    return(m)
 
 # esta funcion se utiliza para juntar de 4 en 4 palabras como
 # unicas entradas de un array, es decir, si antes tenias 8 palabras, 
@@ -118,7 +132,7 @@ def KeyExpansion(key): # key en hexadecimal
     #w = ['32hex' 15 claves]  #devolver lista (K) con 15 claves de 128 bits (32 hexadecimales)
 
 
-# le tiene que llegar la key ya en binario
+
 # Nb = 4
 # -> In the AddRoundKey() transformation, a Round Key is added to the State by a simple bitwise
 # XOR operation. Each Round Key consists of Nb words from the key schedule (described in Sec.
@@ -145,7 +159,7 @@ def AddRoundKey(key, round):
     
     # aplicamos el XOR
     for i in range(0, 16):
-            state[i % 4][i // 4] = state[i % 4][i // 4] ^ keyScheduleYaPartido[round][i % 4][i // 4]
+            state[i % 4][i // 4] = ba2hex(hex2ba(state[i % 4][i // 4]) ^ hex2ba(keyScheduleYaPartido[round][i % 4][i // 4]))
 
 def subBytes():
     for i in range(0, 16):
@@ -181,8 +195,10 @@ def multRijndael(fila): #ahora son filas porque esta traspuesta, pero realmente 
         fila.append(fila[0])
         del(fila[0])
     return (aux)
-    
+
 def mixColumns():
+    global state
+
     state = traspuesta(state)   
 
     for i in range(4):
@@ -190,6 +206,7 @@ def mixColumns():
     
     state = traspuesta(state)
 
+    return(state)
 
 def mixColumnsInv():
     pass 
@@ -200,23 +217,36 @@ def shiftRowsInv():
 def subBytesInv():
     pass
 
-def cifrado(key):
-    AddRoundKey(key, 0)
 
-    for i in range(1, 13):
+# key en hexadecimal y mensaje en 
+def cifrado(key, mensaje):
+
+    global state
+
+    setState(mensaje)
+
+
+    print('State init:', state2string())
+
+    AddRoundKey(key, 0)
+    
+
+    for i in range(1, 14):
+        print('State start en round:', i, state2string())
         subBytes()
         shiftRows()
         mixColumns()
         AddRoundKey(key, i)
     
+    print('State start en round 14:', state2string())
     subBytes()
     shiftRows()
-    AddRoundKey()
+    AddRoundKey(key, 14)
 
 def descifrado():
     AddRoundKey()
 
-    for i in range(1, 13):
+    for i in range(1, 14):
         AddRoundKey()
         mixColumnsInv()
         shiftRowsInv()
@@ -226,3 +256,123 @@ def descifrado():
     subBytesInv()
     AddRoundKey()
 
+
+def menu_principal():
+    exit = False
+    opt = 0
+     
+    while not exit:
+     
+        print("\n1.Cifrar")
+        print("2.Descifrar")
+        print("0.Salir")
+     
+        opt = solicitarOpcion()
+     
+        if opt == 1:
+            print('\n')
+            print('    CIFRAR')
+            print('~~~~~~~~~~~~~~~~')
+            opt1()
+        elif opt == 2:
+            print('\n')
+            print('    DESCIFRAR')
+            print('~~~~~~~~~~~~~~~~')
+            opt2()
+        elif opt == 0:
+            exit = True
+        else:
+            print ("Introduce un numero entre 1 y 2.")
+            print ("Introduce 0 para salir.")
+     
+    print ("Exit")
+    
+    
+def solicitarOpcion():
+ 
+    valido=False
+    numEnt=0
+    while(not valido):
+        try:
+            numEnt = int(input("\nElija una opción: "))
+            valido=True
+        except ValueError:
+            print('Error, debe ser un número entero (0-2)')
+
+    return numEnt
+
+def opt1():
+    
+    mensajeC=[]
+    mensaje=''
+    key=''
+    valido=False
+    
+    key = input("Introduzca la clave en formato hexadecimal: ")
+    
+    while(len(key)!=64):
+        key = input("Introduzca la clave en formato hexadecimal: ")    
+    
+    while(not valido):
+        try:
+            mensaje = input('Escriba el mensaje que desea cifrar: ')
+            longitud= len(hex2ba(mensaje))
+            while(longitud<128):
+                mensaje = input('Escriba el mensaje que desea cifrar: ')
+                longitud= len(hex2ba(mensaje))
+            valido=True
+        except ValueError:
+            print('Error, introduce el mensaje en hexadecimal')
+               
+    if(len(hex2ba(mensaje))==128):
+        cifrado(key,mensaje)
+        mensajeC = state2string()
+        print('\nEl mensaje cifrado es: ', mensajeC+'\n')
+        resetState()
+
+def opt2():
+    print('pues lo que haria la opcion 2')
+    pass
+    '''
+    TABLAInv = CrearTablaInv(invFilas)
+    mensajeC=[]
+    m=''
+    K=''
+    valido=False
+    
+    K = input("Introduzca la clave en formato hexadecimal: ")
+    while(len(K)!=64):
+        K = input("Introduzca la clave en formato hexadecimal: ")
+    
+    K=hex2ba(K)
+    K=expand(K)
+    
+    
+    while(not valido):
+        try:
+            m = input('Escriba el mensaje que desea descifrar: ')
+            longitud= len(hex2ba(m))
+            while(longitud<256):
+                m = input('Escriba el mensaje que desea descifrar: ')
+                longitud= len(hex2ba(m))
+            valido=True
+        except ValueError:
+            print('Error, introduce un numero hexadecimal')
+    
+  
+    if(longitud==256):
+        m=hex2ba(m)
+        mensajeC = invAES(m,K)
+        print('\nEl mensaje descifrado es: ', mensajeC+'\n') '''
+
+def main():
+    
+    print('\n~~~~~~~~~~~~~~~~')
+    print('    MENÚ AES')
+    print('~~~~~~~~~~~~~~~~')
+    
+   
+    #Llamamos al menú
+    menu_principal()
+        
+main()
