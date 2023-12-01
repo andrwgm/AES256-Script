@@ -29,6 +29,23 @@ SboxTable = [['63','7c','77','7b','f2','6b','6f','c5','30','01','67','2b','fe','
             ['e1','f8','98','11','69','d9','8e','94','9b','1e','87','e9','ce','55','28','df'],
             ['8c','a1','89','0d','bf','e6','42','68','41','99','2d','0f','b0','54','bb','16']]
 
+invSboxTable = [['52','09','6a','d5','30','36','a5','38','bf','40','a3','9e','81','f3','d7','fb'],
+                ['7c','e3','39','82','9b','2f','ff','87','34','8e','43','44','c4','de','e9','cb'],
+                ['54','7b','94','32','a6','c2','23','3d','ee','4c','95','0b','42','fa','c3','4e'],
+                ['08','2e','a1','66','28','d9','24','b2','76','5b','a2','49','6d','8b','d1','25'],
+                ['72','f8','f6','64','86','68','98','16','d4','a4','5c','cc','5d','65','b6','92'],
+                ['6c','70','48','50','fd','ed','b9','da','5e','15','46','57','a7','8d','9d','84'],
+                ['90','d8','ab','00','8c','bc','d3','0a','f7','e4','58','05','b8','b3','45','06'],
+                ['d0','2c','1e','8f','ca','3f','0f','02','c1','af','bd','03','01','13','8a','6b'],
+                ['3a','91','11','41','4f','67','dc','ea','97','f2','cf','ce','f0','b4','e6','73'],
+                ['96','ac','74','22','e7','ad','35','85','e2','f9','37','e8','1c','75','df','6e'],
+                ['47','f1','1a','71','1d','29','c5','89','6f','b7','62','0e','aa','18','be','1b'],
+                ['fc','56','3e','4b','c6','d2','79','20','9a','db','c0','fe','78','cd','5a','f4'],
+                ['1f','dd','a8','33','88','07','c7','31','b1','12','10','59','27','80','ec','5f'],
+                ['60','51','7f','a9','19','b5','4a','0d','2d','e5','7a','9f','93','c9','9c','ef'],
+                ['a0','e0','3b','4d','ae','2a','f5','b0','c8','eb','bb','3c','83','53','99','61'],
+                ['17','2b','04','7e','ba','77','d6','26','e1','69','14','63','55','21','0c','7d']]
+
 #key = hex2ba(key) y su len = 256 en binario y 64 en hex
 
 def setState(mensaje):
@@ -186,7 +203,6 @@ def xtime(B):
         del(b[0])
     return(b)
 
-#Esta lista se copia en una variable (c) la cual se multiplica usando la función “xtime()” multiplicaría el primer elemento de la fila con el primer elemento de la columna y así sucesivamente. 
 def multRijndael(fila): #ahora son filas porque esta traspuesta, pero realmente son columnas
     aux = []
     for i in range(4):
@@ -208,14 +224,83 @@ def mixColumns():
 
     return(state)
 
-def mixColumnsInv():
-    pass 
 
-def shiftRowsInv():
-    pass
 
-def subBytesInv():
-    pass
+
+
+
+
+
+
+
+
+
+def invShiftRows():
+    for i in range(0, 4):
+        state[i] = state[i][-i:] + state[i][:-i]
+
+# sbox coge un bitarray de 8 bits y le aplica tabla de sustitucion
+def invsbox(b):
+    x = b[:4]
+    y = b[4:]
+    x = ba2int(x)
+    y = ba2int(y)
+
+    val = invSboxTable[x][y]
+    val = hex2ba(val)
+    return (val)
+
+def invSubBytes():
+    for i in range(0, 16):
+            state[i % 4][i // 4] = ba2hex(invsbox(hex2ba(state[i % 4][i // 4])))
+
+def tresXtime(b):
+    return(xtime(xtime(xtime(b))))
+
+def mult09(b):
+    return(tresXtime(b)^b)
+
+def mult0b(b):
+    return(tresXtime(b)^xtime(b)^b)
+
+
+def mult0d(b):
+     return(tresXtime(b)^xtime(xtime(b))^b)
+
+def mult0e(b):
+     return(tresXtime(b)^xtime(xtime(b))^xtime(b))
+
+def invMultRijndael(fila): #ahora son filas porque esta traspuesta, pero realmente son columnas
+    aux = []
+    for i in range(4):
+        x = ba2hex(mult0e(hex2ba(fila[0])) ^ mult0b(hex2ba(fila[1])) ^ mult0d(hex2ba(fila[2])) ^ mult09(hex2ba(fila[3])))
+        aux.append(x)
+        fila.append(fila[0])
+        del(fila[0])
+    return (aux)
+
+def invMixColumns():
+    global state
+
+    state = traspuesta(state)   
+
+    for i in range(4):
+        state[i] = invMultRijndael(state[i])
+    
+    state = traspuesta(state)
+
+    return(state)
+
+
+
+
+
+
+
+
+
+
+
 
 
 # key en hexadecimal y mensaje en 
@@ -225,36 +310,54 @@ def cifrado(key, mensaje):
 
     setState(mensaje)
 
-
-    print('State init:', state2string())
+    #print('State init:', state2string())
 
     AddRoundKey(key, 0)
     
 
     for i in range(1, 14):
-        print('State start en round:', i, state2string())
+        #print('State start en round:', i, state2string())
         subBytes()
         shiftRows()
         mixColumns()
         AddRoundKey(key, i)
     
-    print('State start en round 14:', state2string())
+    #print('State start en round 14:', state2string())
     subBytes()
     shiftRows()
     AddRoundKey(key, 14)
 
-def descifrado():
-    AddRoundKey()
+def descifrado(key, mensaje):
+
+    global state
+
+    setState(mensaje)
+
+    print('State init:', state2string())
+
+    AddRoundKey(key, 14)
 
     for i in range(1, 14):
-        AddRoundKey()
-        mixColumnsInv()
-        shiftRowsInv()
-        subBytesInv()
+        print('State start en round:', i, state2string())
+        invShiftRows()
+        invSubBytes()
+        AddRoundKey(key, i)
+        invMixColumns()
     
-    shiftRowsInv()
-    subBytesInv()
-    AddRoundKey()
+    print('State start en round 14:', state2string())
+    invShiftRows()
+    invSubBytes()
+    AddRoundKey(key, 0)
+
+
+
+
+
+
+
+
+
+
 
 
 def menu_principal():
@@ -303,7 +406,7 @@ def solicitarOpcion():
 
 def opt1():
     
-    mensajeC=[]
+    mensajeC=''
     mensaje=''
     key=''
     valido=False
@@ -331,39 +434,35 @@ def opt1():
         resetState()
 
 def opt2():
-    print('pues lo que haria la opcion 2')
-    pass
-    '''
-    TABLAInv = CrearTablaInv(invFilas)
-    mensajeC=[]
-    m=''
-    K=''
+    
+    mensajeD=''
+    mensaje=''
+    key=''
     valido=False
     
-    K = input("Introduzca la clave en formato hexadecimal: ")
-    while(len(K)!=64):
-        K = input("Introduzca la clave en formato hexadecimal: ")
+    key = input("Introduzca la clave en formato hexadecimal: ")
     
-    K=hex2ba(K)
-    K=expand(K)
+    while(len(key)!=64):
+        key = input("Introduzca la clave en formato hexadecimal: ")
     
     
     while(not valido):
         try:
-            m = input('Escriba el mensaje que desea descifrar: ')
-            longitud= len(hex2ba(m))
-            while(longitud<256):
-                m = input('Escriba el mensaje que desea descifrar: ')
-                longitud= len(hex2ba(m))
+            mensaje = input('Escriba el mensaje que desea descifrar: ')
+            longitud= len(hex2ba(mensaje))
+            while(longitud<128):
+                mensaje = input('Escriba el mensaje que desea descifrar: ')
+                longitud= len(hex2ba(mensaje))
             valido=True
         except ValueError:
-            print('Error, introduce un numero hexadecimal')
+            print('Error, introduce el mensaje en hexadecimal')
     
   
-    if(longitud==256):
-        m=hex2ba(m)
-        mensajeC = invAES(m,K)
-        print('\nEl mensaje descifrado es: ', mensajeC+'\n') '''
+    if(len(hex2ba(mensaje))==128):
+        descifrado(key, mensaje)
+        mensajeD = state2string()
+        print('\nEl mensaje descifrado es: ', mensajeD+'\n')
+        resetState()
 
 def main():
     
