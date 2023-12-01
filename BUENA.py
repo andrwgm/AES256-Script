@@ -337,14 +337,14 @@ def descifrado(key, mensaje):
 
     AddRoundKey(key, 14)
 
-    for i in range(1, 14):
+    for i in reversed(range(1, 14)):
         print('State start en round:', i, state2string())
         invShiftRows()
         invSubBytes()
         AddRoundKey(key, i)
         invMixColumns()
     
-    print('State start en round 14:', state2string())
+    print('State start en round 0:', state2string())
     invShiftRows()
     invSubBytes()
     AddRoundKey(key, 0)
