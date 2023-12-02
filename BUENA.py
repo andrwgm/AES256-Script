@@ -354,9 +354,22 @@ def descifrado(key, mensaje):
 
 
 
+def padding(mensaje):
+    m = mensaje + '80'
+    L = len(m)
+    r = L % 32
+    if r != 0:
+        m += '0' * (32-r)
+    return(m)
 
+def hex2str(h):
+    H = [h[i:i+2] for i in range(0, len(h), 2)]
+    L = [int(x, 16) for x in H]
+    Letras = [chr(n) for n in L]
+    return(''.join(Letras))
 
-
+def str2hex(cadena):
+    return(''.join([hex(ord(letra))[2:] for letra in cadena]))
 
 
 
@@ -419,10 +432,12 @@ def opt1():
     while(not valido):
         try:
             mensaje = input('Escriba el mensaje que desea cifrar: ')
+            print('Mensaje en ascii: ', mensaje)
+            mensaje = str2hex(mensaje)
+            print('Mensaje en hexadecimal: ', mensaje)
             longitud= len(hex2ba(mensaje))
-            while(longitud<128):
-                mensaje = input('Escriba el mensaje que desea cifrar: ')
-                longitud= len(hex2ba(mensaje))
+            if(longitud<128):
+                mensaje = padding(mensaje)
             valido=True
         except ValueError:
             print('Error, introduce el mensaje en hexadecimal')
@@ -430,7 +445,7 @@ def opt1():
     if(len(hex2ba(mensaje))==128):
         cifrado(key,mensaje)
         mensajeC = state2string()
-        print('\nEl mensaje cifrado es: ', mensajeC+'\n')
+        print('\nEl mensaje cifrado en Hex es: ', mensajeC+'\n')
         resetState()
 
 def opt2():
@@ -461,7 +476,9 @@ def opt2():
     if(len(hex2ba(mensaje))==128):
         descifrado(key, mensaje)
         mensajeD = state2string()
-        print('\nEl mensaje descifrado es: ', mensajeD+'\n')
+        print('\nEl mensaje descifrado es: ')
+        print('\nHex: ', mensajeD)
+        print('Ascii: ', hex2str(mensajeD) + '\n')
         resetState()
 
 def main():
