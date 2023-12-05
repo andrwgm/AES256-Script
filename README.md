@@ -32,8 +32,8 @@ poetry install
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/andrwgm/AES-Protocolos.git
-cd AES-Protocolos
+git clone https://github.com/andrwgm/AES256-Script
+cd AES256-Script
 ```
 
 ### 2. Run the Script
