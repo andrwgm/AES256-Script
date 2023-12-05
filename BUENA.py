@@ -333,18 +333,14 @@ def descifrado(key, mensaje):
 
     setState(mensaje)
 
-    print('State init:', state2string())
-
     AddRoundKey(key, 14)
 
     for i in reversed(range(1, 14)):
-        print('State start en round:', i, state2string())
         invShiftRows()
         invSubBytes()
         AddRoundKey(key, i)
         invMixColumns()
     
-    print('State start en round 0:', state2string())
     invShiftRows()
     invSubBytes()
     AddRoundKey(key, 0)
@@ -371,7 +367,19 @@ def hex2str(h):
 def str2hex(cadena):
     return(''.join([hex(ord(letra))[2:] for letra in cadena]))
 
+def msg2blockArray(mensaje):
+    m = []
+    for i in range(0, len(mensaje), 32):
+        m.append(mensaje[i:i+32])
+    return(m)
 
+
+
+
+def tituloPrograma():
+    print('\n~~~~~~~~~~~~~~~~')
+    print('    MENÚ AES')
+    print('~~~~~~~~~~~~~~~~')
 
 def menu_principal():
     exit = False
@@ -401,8 +409,7 @@ def menu_principal():
             print ("Introduce un numero entre 1 y 2.")
             print ("Introduce 0 para salir.")
      
-    print ("Exit")
-    
+    print ("\nSaliendo... Hasta pronto! :)\n")
     
 def solicitarOpcion():
  
@@ -427,26 +434,37 @@ def opt1():
     key = input("Introduzca la clave en formato hexadecimal: ")
     
     while(len(key)!=64):
+        print('Error, la clave debe tener 64 caracteres')
         key = input("Introduzca la clave en formato hexadecimal: ")    
     
     while(not valido):
         try:
-            mensaje = input('Escriba el mensaje que desea cifrar: ')
-            print('Mensaje en ascii: ', mensaje)
+            mensaje = input('Escriba el mensaje en texto plano que desea cifrar: ')
             mensaje = str2hex(mensaje)
-            print('Mensaje en hexadecimal: ', mensaje)
             longitud= len(hex2ba(mensaje))
             if(longitud<128):
                 mensaje = padding(mensaje)
             valido=True
         except ValueError:
-            print('Error, introduce el mensaje en hexadecimal')
+            print('Error, no introduzca simbolos ni caracteres especiales')
                
     if(len(hex2ba(mensaje))==128):
         cifrado(key,mensaje)
         mensajeC = state2string()
         print('\nEl mensaje cifrado en Hex es: ', mensajeC+'\n')
         resetState()
+
+    if(len(hex2ba(mensaje))>128):
+        messageArray = msg2blockArray(mensaje)
+        if(len(hex2ba(messageArray[-1]))<128):
+            messageArray[-1] = padding(messageArray[-1])
+        for block in messageArray:
+            cifrado(key, block)
+            mensajeC += state2string()
+            resetState()
+        print('\nEl mensaje cifrado en Hex es: ', mensajeC+'\n')
+
+    tituloPrograma()
 
 def opt2():
     
@@ -458,6 +476,7 @@ def opt2():
     key = input("Introduzca la clave en formato hexadecimal: ")
     
     while(len(key)!=64):
+        print('Error, la clave debe tener 64 caracteres')
         key = input("Introduzca la clave en formato hexadecimal: ")
     
     
@@ -476,18 +495,27 @@ def opt2():
     if(len(hex2ba(mensaje))==128):
         descifrado(key, mensaje)
         mensajeD = state2string()
+        resetState()
         print('\nEl mensaje descifrado es: ')
         print('\nHex: ', mensajeD)
         print('Ascii: ', hex2str(mensajeD) + '\n')
-        resetState()
+
+    if(len(hex2ba(mensaje))>128):
+        messageArray = msg2blockArray(mensaje)
+        for block in messageArray:
+            descifrado(key, block)
+            mensajeD += state2string()
+            resetState()
+        print('\nEl mensaje descifrado es: ')
+        print('\nHex: ', mensajeD)
+        print('Ascii: ', hex2str(mensajeD) + '\n')
+
+    tituloPrograma()
 
 def main():
     
-    print('\n~~~~~~~~~~~~~~~~')
-    print('    MENÚ AES')
-    print('~~~~~~~~~~~~~~~~')
-    
-   
+    tituloPrograma()
+
     #Llamamos al menú
     menu_principal()
         
