@@ -7,14 +7,16 @@ from bitarray.util import hex2ba, ba2hex, ba2int, int2ba
 # Inicializamos la matriz que guardará el estado del cifrado
 state = [[0 for x in range(4)] for y in range(4)]
 
-# Establecemos los valores de Rcon y les transformamos a binario par su posterior uso
+# Establecemos los valores de Rcon y les transformamos a binario para su
+# posterior uso
 Rcon = ['01000000', '02000000', '04000000', '08000000',
         '10000000', '20000000', '40000000', '80000000',
         '1B000000', '36000000', '6C000000', 'D8000000',
         'AB000000', '4D000000']
 Rcon = [hex2ba(x) for x in Rcon]
 
-# Establecemos las tablas de valores de sustitución que se usan en la funcion Sbox (cifrado y descifrado)
+# Establecemos las tablas de valores de sustitución que se usan en la
+# funcion Sbox (cifrado y descifrado)
 SboxTable = [['63','7c','77','7b','f2','6b','6f','c5','30','01','67','2b','fe','d7','ab','76'],
             ['ca','82','c9','7d','fa','59','47','f0','ad','d4','a2','af','9c','a4','72','c0'],
             ['b7','fd','93','26','36','3f','f7','cc','34','a5','e5','f1','71','d8','31','15'],
@@ -49,17 +51,39 @@ invSboxTable = [['52','09','6a','d5','30','36','a5','38','bf','40','a3','9e','81
                 ['a0','e0','3b','4d','ae','2a','f5','b0','c8','eb','bb','3c','83','53','99','61'],
                 ['17','2b','04','7e','ba','77','d6','26','e1','69','14','63','55','21','0c','7d']]
 
-# Declaramos algunas funciones que nos serán útiles para manejar el estado de
-# los cifrados y su traducción de matrices a strings
+# Declaramos algunas funciones que nos serán útiles para manejar el
+#estado de los cifrados y su traducción de matrices a strings
+
 def setState(mensaje):
+    """
+    Input: mensaje en hexadecimal
+    Output: state (matriz 4x4) con el mensaje en hexadecimal
+
+    Esta funcion se encarga de coger el mensaje en hexadecimal y
+    pasarlo a la matriz state, que es la que se utiliza para almacenar
+    el estado del cifrado AES
+    """
     for i in range(0, 16):
         state[i % 4][i // 4] = mensaje[i*2:i*2+2]
 
 def resetState():
+    """
+    Input: -
+    Output: state (matriz 4x4) con todos sus valores a 00
+
+    Esta funcion se encarga de resetear el estado del cifrado AES
+    """
     for i in range(0, 16):
         state[i % 4][i // 4] = '00'
 
 def state2string():
+    """
+    Input: -
+    Output: m (string) con el contenido del state
+
+    Esta funcion se encarga de coger el contenido del state y pasarlo
+    a un string
+    """
     m = ''
     for i in range(0, 16):
         m += state[i % 4][i // 4]
@@ -69,6 +93,14 @@ def state2string():
 # unicas entradas de un array, es decir, si antes tenias 8 palabras, 
 # ahora tienes dos posiciones de array, con 4 palabras cada una.
 def agrupar(L, k):
+    """
+    Input: L (lista) y k (int)
+    Output: G (lista) con k palabras de L en cada posicion
+    
+    Esta funcion se utiliza para juntar de 4 en 4 palabras como
+    unicas entradas de un array, es decir, si antes tenias 8 palabras, 
+    ahora tienes dos posiciones de array, con 4 palabras cada una.
+    """
     from functools import reduce
     assert len(L) % k == 0
     N = len(L) // k
@@ -80,9 +112,15 @@ def agrupar(L, k):
 
 # ------ FUNCIONES DE CIFRADO ------
 
-# sbox coge un bitarray de 8 bits y le aplica tabla de sustitucion según
-# las coordenadas que dicten su valor numerico
 def sbox(b):
+    """
+    Input: b (bitarray)
+    Output: val (bitarray) con el valor de la sustitucion de b
+
+    Esta funcion se encarga de coger un bitarray de 8 bits y le aplica
+    tabla de sustitucion según las coordenadas que dicten su valor
+    numerico
+    """
     x = b[:4]
     y = b[4:]
     x = ba2int(x)
@@ -92,11 +130,15 @@ def sbox(b):
     val = hex2ba(val)
     return (val)
 
-
-# Sbox coge la palabra de 32 digitos binarios que le proporciona el 
-# el return de SubWord y le aplica sbox a cada trozo de 8 bits 
-# de la palabra, devolviendo un bitarray de 32 bits
 def Sbox(word):
+    """
+    Input: word (bitarray)
+    Output: B (bitarray) con el valor de la sustitucion de word
+
+    Sbox coge la palabra de 32 digitos binarios que le proporciona el 
+    el return de SubWord y le aplica sbox a cada trozo de 8 bits 
+    de la palabra, devolviendo un bitarray de 32 bits
+    """
     B = bitarray() 
     for i in range(0,len(word),8):
         b = word[i:i+8]
@@ -104,21 +146,38 @@ def Sbox(word):
         B = B + b
     return (B)
 
-# RotWord coge el primer byte y le pone al final de la palabra.
-# La variable word entra en formato binario y retorna otro bitarray
 def RotWord(word): 
+    """
+    Input: word (bitarray)
+    Output: word (bitarray) con el primer byte al final de la palabra
+
+    RotWord coge el primer byte y le pone al final de la palabra.
+    La variable word entra en formato binario y retorna otro bitarray
+    """
     return(word[8:]+word[:8])
 
-# SubWord coge los bytes que le entren en la variable word (en binario) y
-# les aplica la sustitución de la funcion Sbox. Retorna un bitarray
 def SubWord(word):
+    """
+    Input: word (bitarray)
+    Output: Sbox(word) (bitarray) con la sustitucion de cada byte
+    de word
+
+    SubWord coge los bytes que le entren en la variable word
+    (en binario) y les aplica la sustitución de la funcion Sbox.
+    """
     return Sbox(word) 
 
-# Nb = 4 Nk = 8 Nr = 14       Nb * (Nr + 1) = 60
-# KeyExpansino es la funcion que genera el KeySchedule a partir de la clave
-# que se le pasa como parametro. La clave entra en hexadecimal y se devuelve
-# una lista de 15 palabras (bitarrays) de 128 bits cada una
 def KeyExpansion(key): 
+    """
+    Input: key (string)
+    Output: w (lista) con el KeySchedule
+
+    Nb = 4 Nk = 8 Nr = 14       Nb * (Nr + 1) = 60
+    KeyExpansion es la funcion que genera el KeySchedule a partir de la
+    clave que se le pasa como parametro. La clave entra en hexadecimal y
+    se devuelve una lista de 15 palabras (bitarrays) de 128 bits cada 
+    una
+    """
     key = hex2ba(key) # key es un bitarray de 256 bits
     w = []
 
@@ -146,52 +205,86 @@ def KeyExpansion(key):
 
     return(agrupar(w,4))
 
-# en AddRoundKey intercambiamos los valores del estado haciendo un XOR del propio estado con 4 palabras del
-# key schedule que nos devuelve la funcion keyExpansion. El state ya tiene que estar establecido con el 
-# contenido del mensaje
 def AddRoundKey(key, round):    
+    """
+    Input: key (string) y round (int)
+    Output: state (matriz 4x4) con el resultado de aplicar el XOR
+    
+    En AddRoundKey intercambiamos los valores del estado haciendo un XOR 
+    del propio estado con 4 palabras del key schedule que nos devuelve
+    la funcion keyExpansion. El state ya tiene que estar establecido
+    con el contenido del mensaje
+    """
 
     # keySchedule es una lista de 15 palabras de 128 bits cada una
     keySchedule = list(KeyExpansion(key))
 
-    # keyScheduleYaPartido es una lista de 15 listas de 4 palabras de 32 bits cada una, es decir,
-    # así podemos aplicar el XOR de cada lista de la keyScheduleYaPartida con cada fila del state,
-    # que ambas tienen 4 elementos
+    # keyScheduleYaPartido es una lista de 15 listas de 4 palabras de 32 bits
+    # cada una, es decir, así podemos aplicar el XOR de cada lista de la
+    # keyScheduleYaPartida con cada fila del state, que ambas tienen
+    # 4 elementos
     keyScheduleYaPartido = []
     for palabra in keySchedule:
         keySchedulePartes = [['','','',''],['','','',''],['','','',''],['','','','']]
         palabraAux = ba2hex(palabra)
         for i in range(0, 16):
             aux2 = palabraAux[2*i:2*i+2]
-            keySchedulePartes[i % 4][i // 4] = aux2 # así, para cada iteracion del for, se llena cada casilla de la matrix 4x4 de manera
-                                                    # vertical como se puede ver en el paper del cifrado AES
+            keySchedulePartes[i % 4][i // 4] = aux2
+            # así, para cada iteracion del for, se llena cada casilla de la
+            # matrix 4x4 de manera vertical como se puede ver en el paper del
+            # cifrado AES
         keyScheduleYaPartido.append(keySchedulePartes)
     
     # aplicamos el XOR
     for i in range(0, 16):
-            state[i % 4][i // 4] = ba2hex(hex2ba(state[i % 4][i // 4]) ^ hex2ba(keyScheduleYaPartido[round][i % 4][i // 4]))
+            state[i % 4][i // 4] = ba2hex(hex2ba(state[i % 4][i // 4]) ^
+                hex2ba(keyScheduleYaPartido[round][i % 4][i // 4]))
 
-# subBytes coge cada byte del state y le aplica la sustitucion de la funcion sbox
 def subBytes():
+    """
+    Input: -
+    Output: state (matriz 4x4) con el resultado de aplicar la sustitucion
+    
+    subBytes coge cada byte del state y le aplica la sustitucion de la
+    funcion sbox
+    """
     for i in range(0, 16):
             state[i % 4][i // 4] = ba2hex(sbox(hex2ba(state[i % 4][i // 4])))
 
-# shiftRows coge cada fila del state y la rota a la izquierda tantas veces como su indice
 def shiftRows():
+    """
+    Input: -
+    Output: state (matriz 4x4) con el resultado de aplicar la rotacion
+    
+    shiftRows coge cada fila del state y la rota a la izquierda tantas
+    veces como su indice
+    """
     for i in range(0, 4):
         state[i] = state[i][i:] + state[i][:i]
 
-# traspuesta traspone la matriz que se le pase por parámetro y la devuelve. Se usa para poder aplicar la funcion mixColumns como si se tratase
-# de filas en vez de columnas
 def traspuesta(matrix):
+    """
+    Input: matrix (matriz 4x4)
+    Output: E (matriz 4x4) con la matriz traspuesta
+
+    traspuesta traspone la matriz que se le pase por parámetro y la
+    devuelve. Se usa para poder aplicar la funcion mixColumns como si
+    se tratase de filas en vez de columnas.
+    """
     E = []
     for i in range(0, 4):
         E.append([matrix[j][i] for j in range(0, 4)])
     return(E)
 
-# Se calcula la x multiplicacion por el binario que se le pase por parametro. En caso de ser mayor que 8 bits,
-# se le aplica el polinomio de reduccion
 def xtime(B):
+    """
+    Input: B (bitarray)
+    Output: b (bitarray) con el resultado de aplicar la multiplicacion
+    
+    xtime es la funcion que se encarga de aplicar la multiplicacion por
+    x a un binario que se le pase por parametro. En caso de ser mayor
+    que 8 bits, se le aplica el polinomio de reduccion de Rijndael
+    """
     b = B.copy()
     b.append(0) 
     if b[0]==0:
@@ -201,12 +294,19 @@ def xtime(B):
         del(b[0])
     return(b)
 
-# multRijndael es la funcion que se encarga de aplicar la multiplicacion de Rijndael a cada columna
-# (realmente fila ya que se encuentra traspuesto) del state
-def multRijndael(fila): 
+def multRijndael(fila):
+    """
+    Input: fila (lista)
+    Output: aux (lista) con el resultado de aplicar la multiplicacion
+    
+    multRijndael es la funcion que se encarga de aplicar la multiplicacion
+    de Rijndael a cada columna (realmente fila ya que se encuentra
+    traspuesto) del state
+    """
     aux = []
     for i in range(4):
-        x = ba2hex(xtime(hex2ba(fila[0])) ^ xtime(hex2ba(fila[1])) ^ hex2ba(fila[1]) ^ hex2ba(fila[2]) ^ hex2ba(fila[3]))
+        x = ba2hex(xtime(hex2ba(fila[0])) ^ xtime(hex2ba(fila[1])) ^ 
+                   hex2ba(fila[1]) ^ hex2ba(fila[2]) ^ hex2ba(fila[3]))
         aux.append(x)
         fila.append(fila[0])
         del(fila[0])
@@ -215,6 +315,14 @@ def multRijndael(fila):
 # mixColumns coge cada columna (coge cada fila de la matriz traspuesta) del state
 # y le aplica la multiplicacion de Rijndael
 def mixColumns():
+    """
+    Input: -
+    Output: state (matriz 4x4) con el resultado de aplicar la
+            multiplicacion
+    
+    mixColumns coge cada columna (coge cada fila de la matriz
+    traspuesta) del state y le aplica la multiplicacion de Rijndael
+    """
     global state
     state = traspuesta(state)   
     for i in range(4):
@@ -228,13 +336,25 @@ def mixColumns():
 
 # ------ FUNCIONES DE DESCIFRADO ------
 
-# invShiftRows coge cada fila del state y la rota a la derecha tantas veces como su indice
 def invShiftRows():
+    """
+    Input: -
+    Output: state (matriz 4x4) con el resultado de aplicar la rotacion
+    
+    invShiftRows coge cada fila del state y la rota a la derecha tantas
+    veces como su indice
+    """
     for i in range(0, 4):
         state[i] = state[i][-i:] + state[i][:-i]
 
-# invsbox coge un bitarray de 8 bits y le aplica tabla de sustitucion inversa
 def invsbox(b):
+    """
+    Input: b (bitarray)
+    Output: val (bitarray) con el valor de la sustitucion inversa de b
+    
+    invsbox coge un bitarray de 8 bits y le aplica tabla de sustitucion
+    inversa
+    """
     x = b[:4]
     y = b[4:]
     x = ba2int(x)
@@ -244,43 +364,106 @@ def invsbox(b):
     val = hex2ba(val)
     return (val)
 
-# invSubBytes coge cada byte del state y le aplica la sustitucion inversa de la funcion invsbox
 def invSubBytes():
+    """
+    Input: -
+    Output: state (matriz 4x4) con el resultado de aplicar la
+            sustitucion inversa
+    
+    invSubBytes coge cada byte del state y le aplica la sustitucion
+    inversa de la funcion invsbox
+    """
     for i in range(0, 16):
             state[i % 4][i // 4] = ba2hex(invsbox(hex2ba(state[i % 4][i // 4])))
 
-# tresXtime es una funcion que comprime realizar 3 veces la funcion xtime a un binario
 def tresXtime(b):
+    """
+    Input: b (bitarray)
+    Output: xtime(xtime(xtime(b))) (bitarray) con el resultado de
+            aplicar la multiplicacion
+            
+    tresXtime es una funcion que comprime realizar 3 veces la funcion
+    xtime a un binario
+    """
     return(xtime(xtime(xtime(b))))
 
-# mult09, mult0b, mult0d y mult0e son las funciones que se encargan de aplicar la multiplicacion inversa de Rijndael según cada valor de la matriz
 def mult09(b):
+    """
+    Input: b (bitarray)
+    Output: tresXtime(b)^b (bitarray) con el resultado de aplicar la
+            multiplicacion
+    
+    mult09 es la funcion que se encarga de aplicar la multiplicacion
+    inversa de Rijndael a cada columna (realmente fila ya que se
+    encuentra traspuesto) del state
+    """
     return(tresXtime(b)^b)
 
 def mult0b(b):
+    """
+    Input: b (bitarray)
+    Output: tresXtime(b)^xtime(b)^b (bitarray) con el resultado de
+            aplicar la multiplicacion
+    
+    mult0b es la funcion que se encarga de aplicar la multiplicacion
+    inversa de Rijndael a cada columna (realmente fila ya que se
+    encuentra traspuesto) del state
+    """
     return(tresXtime(b)^xtime(b)^b)
 
 
 def mult0d(b):
-     return(tresXtime(b)^xtime(xtime(b))^b)
+    """
+    Input: b (bitarray)
+    Output: tresXtime(b)^xtime(xtime(b))^b (bitarray) con el resultado
+            de aplicar la multiplicacion
+    
+    mult0d es la funcion que se encarga de aplicar la multiplicacion
+    inversa de Rijndael a cada columna (realmente fila ya que se
+    encuentra traspuesto) del state
+    """
+    return(tresXtime(b)^xtime(xtime(b))^b)
 
 def mult0e(b):
-     return(tresXtime(b)^xtime(xtime(b))^xtime(b))
+    """
+    Input: b (bitarray)
+    Output: tresXtime(b)^xtime(xtime(b))^xtime(b) (bitarray) con el
+            resultado de aplicar la multiplicacion
+    
+    mult0e es la funcion que se encarga de aplicar la multiplicacion
+    inversa de Rijndael a cada columna (realmente fila ya que se
+    encuentra traspuesto) del state
+    """
+    return(tresXtime(b)^xtime(xtime(b))^xtime(b))
 
-# invMultRijndael es la funcion que se encarga de aplicar la multiplicacion inversa de Rijndael a cada columna
-# (realmente fila ya que se encuentra traspuesto) del state
 def invMultRijndael(fila): 
+    """
+    Input: fila (lista)
+    Output: aux (lista) con el resultado de aplicar la multiplicacion
+
+    invMultRijndael es la funcion que se encarga de aplicar la
+    multiplicacion inversa de Rijndael a cada columna (realmente fila
+    ya que se encuentra traspuesto) del state
+    """
     aux = []
     for i in range(4):
-        x = ba2hex(mult0e(hex2ba(fila[0])) ^ mult0b(hex2ba(fila[1])) ^ mult0d(hex2ba(fila[2])) ^ mult09(hex2ba(fila[3])))
+        x = ba2hex(mult0e(hex2ba(fila[0])) ^ mult0b(hex2ba(fila[1])) ^ 
+                   mult0d(hex2ba(fila[2])) ^ mult09(hex2ba(fila[3])))
         aux.append(x)
         fila.append(fila[0])
         del(fila[0])
     return (aux)
 
-# invMixColumns coge cada columna (coge cada fila de la matriz traspuesta) del state
-# y le aplica la multiplicacion inversa de Rijndael
 def invMixColumns():
+    """
+    Input: -
+    Output: state (matriz 4x4) con el resultado de aplicar la
+            multiplicacion inversa 
+    
+    invMixColumns coge cada columna (coge cada fila de la matriz
+    traspuesta) del state y le aplica la multiplicacion inversa de
+    Rijndael
+    """
     global state
     state = traspuesta(state)   
     for i in range(4):
@@ -293,10 +476,15 @@ def invMixColumns():
 
 # ------ CIFRADO Y DESCIFRADO AES ------
 
-# cifrado y descifrado son las funciones que se encargan de aplicar el cifrado y descifrado AES
-# cifrado recibe la clave y el mensaje en hexadecimal y modifica durante su ejecución el state 
-# para que al finalizar el mensaje cifrado se encuentre en esa matriz
 def cifrado(key, mensaje):
+    """
+    Input: key (string) y mensaje (string)
+    Output: state (matriz 4x4) con el mensaje cifrado
+    
+    cifrado recibe la clave y el mensaje en hexadecimal y modifica
+    durante su ejecución el state para que al finalizar el mensaje
+    cifrado se encuentre en esa matriz
+    """
     global state
 
     setState(mensaje)
@@ -313,9 +501,15 @@ def cifrado(key, mensaje):
     shiftRows()
     AddRoundKey(key, 14)
 
-# descifrado recibe la clave y el mensaje en hexadecimal y modifica durante su ejecución el state
-# para que al finalizar el mensaje descifrado se encuentre en esa matriz
 def descifrado(key, mensaje):
+    """
+    Input: key (string) y mensaje (string)
+    Output: state (matriz 4x4) con el mensaje descifrado
+
+    descifrado recibe la clave y el mensaje en hexadecimal y modifica
+    durante su ejecución el state para que al finalizar el mensaje
+    descifrado se encuentre en esa matriz
+    """
 
     global state
 
@@ -338,8 +532,14 @@ def descifrado(key, mensaje):
 
 # ------ GESTIÓN DE MENSAJES CIFRADOS Y PARA CIFRAR ------
 
-# padding es la funcion que se encarga de añadir los bits necesarios a un trozo del mensaje para que sea multiplo de 32 bits
 def padding(mensaje):
+    """
+    Input: mensaje (string)
+    Output: m (string) con el mensaje con el padding añadido
+    
+    padding es la funcion que se encarga de añadir los bits necesarios
+    a un trozo del mensaje para que sea multiplo de 32 bits
+    """
     m = mensaje + '80'
     L = len(m)
     r = L % 32
@@ -347,19 +547,39 @@ def padding(mensaje):
         m += '0' * (32-r)
     return(m)
 
-# hex2str y str2hex son las funciones que se encargan de traducir de hexadecimal a string y viceversa
 def hex2str(h):
+    """
+    Input: h (string)
+    Output: ''.join(Letras) (string) con el mensaje en ascii
+    
+    hex2str es la funcion que se encarga de traducir de hexadecimal a
+    string
+    """
     H = [h[i:i+2] for i in range(0, len(h), 2)]
     L = [int(x, 16) for x in H]
     Letras = [chr(n) for n in L]
     return(''.join(Letras))
 
 def str2hex(cadena):
+    """
+    Input: cadena (string)
+    Output: ''.join([hex(ord(letra))[2:] for letra in cadena]) (string)
+            con el mensaje en hexadecimal
+    
+    str2hex es la funcion que se encarga de traducir de string a
+    hexadecimal
+    """
     return(''.join([hex(ord(letra))[2:] for letra in cadena]))
 
-# msg2blockArray es la funcion que se encarga de dividir el mensaje en bloques de 128 bits para poder cifrarlo
-# por trozos en el caso de ser un mensaje mayor que 128 bits
 def msg2blockArray(mensaje):
+    """
+    Input: mensaje (string)
+    Output: m (lista) con el mensaje dividido en bloques de 128 bits
+
+    msg2blockArray es la funcion que se encarga de dividir el mensaje
+    en bloques de 128 bits para poder cifrarlo por trozos en el caso
+    de ser un mensaje mayor que 128 bits
+    """
     m = []
     for i in range(0, len(mensaje), 32):
         m.append(mensaje[i:i+32])
@@ -432,7 +652,8 @@ def opt1():
     
     while(not valido):
         try:
-            mensaje = input('Escriba el mensaje en texto plano que desea cifrar: ')
+            mensaje = input('Escriba el mensaje en texto plano que desea \
+cifrar: ')
             mensaje = str2hex(mensaje)
             longitud= len(hex2ba(mensaje))
             if(longitud<128):
@@ -510,5 +731,6 @@ def main():
     tituloPrograma()
 
     menu_principal()
-        
-main()
+
+if __name__ == '__main__':
+    main()
