@@ -528,6 +528,20 @@ def descifrado(key, mensaje):
 
 # ------ GESTIÓN DE MENSAJES CIFRADOS Y PARA CIFRAR ------
 
+def keygen():
+    """
+    Input: -
+    Output: key (string) en hexadecimal con la clave generada
+
+    keygen es la funcion que se encarga de generar una clave aleatoria
+    de 256 bits
+    """
+    import random
+    key = ''
+    for i in range(64):
+        key += random.choice('0123456789abcdef')
+    return(key)
+
 def padding(mensaje):
     """
     Input: mensaje (string)
@@ -595,6 +609,30 @@ def msg2blockArray(mensaje):
         m.append(mensaje[i:i+32])
     return(m)
 
+def guardarTxt(mensaje, nombre):
+    """
+    Input: mensaje (string)
+    Output: -
+
+    guardarTxt es la funcion que se encarga de guardar el mensaje
+    en un archivo de texto
+    """
+    f = open(nombre+'.txt', 'w')
+    f.write(mensaje)
+    f.close()
+
+def cargarTxt(nombre):
+    """
+    Input: -
+    Output: mensaje (string)
+
+    cargarTxt es la funcion que se encarga de cargar el mensaje
+    desde un archivo de texto
+    """
+    f = open(nombre+'.txt', 'r')
+    mensaje = f.read()
+    f.close()
+    return(mensaje)
 
 
 # ------ MENÚ PRINCIPAL ------
@@ -612,6 +650,7 @@ def menu_principal():
      
         print("\n1.Cifrar")
         print("2.Descifrar")
+        print("3.Generar clave aleatoria")
         print("0.Salir")
      
         opt = solicitarOpcion()
@@ -626,6 +665,11 @@ def menu_principal():
             print('    DESCIFRAR')
             print('~~~~~~~~~~~~~~~~')
             opt2()
+        elif opt == 3:
+            print('\n')
+            print(' GENERAR CLAVE')
+            print('~~~~~~~~~~~~~~~~')
+            opt3()
         elif opt == 0:
             exit = True
         else:
@@ -654,11 +698,27 @@ def opt1():
     key=''
     valido=False
     
-    key = input("Introduzca la clave en formato hexadecimal: ")
+    cargar = input('Desea cargar la clave desde un archivo de texto? (s/n): ')
+    if(cargar=='s'):
+        nombre = input('Introduzca el nombre del archivo: ')
+        key = cargarTxt(nombre)
+        print('Clave cargada desde '+nombre+'.txt\n')
+    else:
+        key = input("Introduzca la clave en formato hexadecimal: ")
     
     while(len(key)!=64):
         print('Error, la clave debe tener 64 caracteres')
-        key = input("Introduzca la clave en formato hexadecimal: ")    
+        cargar = input('Desea cargar otra clave desde un archivo de texto? \
+(s/n): (Intro para cancelar)')
+        if(cargar==''):
+            print('Volviendo al menú principal...')
+            break
+        elif(cargar=='s'):
+            nombre = input('Introduzca el nombre del archivo: ')
+            key = cargarTxt(nombre)
+            print('Clave cargada desde '+nombre+'.txt\n')
+        else:
+            key = input("Introduzca la clave en formato hexadecimal: ")  
     
     while(not valido):
         try:
@@ -676,6 +736,12 @@ cifrar: ')
         cifrado(key,mensaje)
         mensajeC = state2string()
         print('\nEl mensaje cifrado en Hex es: ', mensajeC+'\n')
+        guardar = input('Desea guardar el mensaje cifrado en un archivo de texto? (s/n): ')
+
+        if(guardar=='s'):
+            nombre = input('Introduzca el nombre del archivo: ')
+            guardarTxt(mensajeC, nombre)
+            print('Mensaje guardado en mensaje.txt\n')
         resetState()
 
     if(len(hex2ba(mensaje))>128):
@@ -685,8 +751,14 @@ cifrar: ')
         for block in messageArray:
             cifrado(key, block)
             mensajeC += state2string()
-            resetState()
         print('\nEl mensaje cifrado en Hex es: ', mensajeC+'\n')
+
+        guardar = input('Desea guardar el mensaje cifrado en un archivo de texto? (s/n): ')
+        if(guardar=='s'):
+            nombre = input('Introduzca el nombre del archivo: ')
+            guardarTxt(mensajeC, nombre)
+            print('Mensaje guardado en '+nombre+'.txt\n')
+        resetState()
 
     tituloPrograma()
 
@@ -697,23 +769,47 @@ def opt2():
     key=''
     valido=False
     
-    key = input("Introduzca la clave en formato hexadecimal: ")
-    
-    while(len(key)!=64):
-        print('Error, la clave debe tener 64 caracteres')
+    cargar = input('Desea cargar la clave desde un archivo de texto? (s/n): ')
+    if(cargar=='s'):
+        nombre = input('Introduzca el nombre del archivo: ')
+        key = cargarTxt(nombre)
+        print('Clave cargada desde '+nombre+'.txt\n')
+    else:
         key = input("Introduzca la clave en formato hexadecimal: ")
-    
+        
+        while(len(key)!=64):
+            print('Error, la clave debe tener 64 caracteres')
+            key = input("Introduzca la clave en formato hexadecimal: ")
+        
     
     while(not valido):
         try:
-            mensaje = input('Escriba el mensaje que desea descifrar: ')
-            longitud= len(hex2ba(mensaje))
-            while(longitud<128):
+            cargar = input('Desea cargar el mensaje desde un archivo de texto? (s/n): ')
+            if(cargar=='s'):
+                nombre = input('Introduzca el nombre del archivo: ')
+                mensaje = cargarTxt(nombre)
+                print('Mensaje cargado desde '+nombre+'.txt\n')
+                longitud= len(hex2ba(mensaje))
+                while(longitud<128):
+                    print('Error, el mensaje debe tener 64 caracteres hex')
+                    nombre = input('Introduzca el nombre de otro archivo \
+(Intro para cancelar): ')
+                    if(nombre==''):
+                        print('Volviendo al menú principal...')
+                        break
+                    else:
+                        mensaje = cargarTxt(nombre)
+                        longitud= len(hex2ba(mensaje))
+                valido=True
+            else:
                 mensaje = input('Escriba el mensaje que desea descifrar: ')
                 longitud= len(hex2ba(mensaje))
-            valido=True
+                while(longitud<128):
+                    mensaje = input('Escriba el mensaje que desea descifrar: ')
+                    longitud= len(hex2ba(mensaje))
+                valido=True
         except ValueError:
-            print('Error, introduce el mensaje en hexadecimal')
+            print('Error, introduce un mensaje en hexadecimal')
     
   
     if(len(hex2ba(mensaje))==128):
@@ -736,6 +832,16 @@ def opt2():
         print('\nHex: ', mensajeD)
         print('Ascii: ', hex2str(mensajeD) + '\n')
 
+    tituloPrograma()
+
+def opt3():
+    key = keygen()
+    print('\nLa clave generada es: ', key)
+    guardar = input('\nDesea guardar la clave en un archivo de texto? (s/n): ')
+    if(guardar=='s'):
+        nombre = input('Introduzca el nombre del archivo: ')
+        guardarTxt(key, nombre)
+        print('Clave guardada en '+nombre+'.txt\n')
     tituloPrograma()
 
 def main():
