@@ -219,10 +219,10 @@ def AddRoundKey(key, round):
     # keySchedule es una lista de 15 palabras de 128 bits cada una
     keySchedule = list(KeyExpansion(key))
 
-    # keyScheduleYaPartido es una lista de 15 listas de 4 palabras de 32 bits
-    # cada una, es decir, así podemos aplicar el XOR de cada lista de la
-    # keyScheduleYaPartida con cada fila del state, que ambas tienen
-    # 4 elementos
+    # keyScheduleYaPartido es una lista de 15 listas de 4 palabras de 32
+    # bits cada una, es decir, así podemos aplicar el XOR de cada lista 
+    # de la keyScheduleYaPartida con cada fila del state, que ambas
+    # tienen 4 elementos
     keyScheduleYaPartido = []
     for palabra in keySchedule:
         keySchedulePartes = [['','','',''],['','','',''],['','','',''],['','','','']]
@@ -312,8 +312,6 @@ def multRijndael(fila):
         del(fila[0])
     return (aux)
 
-# mixColumns coge cada columna (coge cada fila de la matriz traspuesta) del state
-# y le aplica la multiplicacion de Rijndael
 def mixColumns():
     """
     Input: -
@@ -330,8 +328,6 @@ def mixColumns():
     
     state = traspuesta(state)
     return(state)
-
-
 
 
 # ------ FUNCIONES DE DESCIFRADO ------
@@ -547,6 +543,20 @@ def padding(mensaje):
         m += '0' * (32-r)
     return(m)
 
+def unpadding(mensaje):
+    """
+    Input: mensaje (string)
+    Output: m (string) con el mensaje sin el padding añadido
+    
+    unpadding es la funcion que se encarga de quitar los bits
+    añadidos por padding
+    """
+    m = mensaje
+    while m[-1] == '0' and m[-2] != '8':
+        m = m[:-1]
+    m = m[:-2]
+    return(m)
+
 def hex2str(h):
     """
     Input: h (string)
@@ -709,6 +719,7 @@ def opt2():
     if(len(hex2ba(mensaje))==128):
         descifrado(key, mensaje)
         mensajeD = state2string()
+        mensajeD = unpadding(mensajeD)
         resetState()
         print('\nEl mensaje descifrado es: ')
         print('\nHex: ', mensajeD)
@@ -720,6 +731,7 @@ def opt2():
             descifrado(key, block)
             mensajeD += state2string()
             resetState()
+        mensajeD = unpadding(mensajeD)
         print('\nEl mensaje descifrado es: ')
         print('\nHex: ', mensajeD)
         print('Ascii: ', hex2str(mensajeD) + '\n')
